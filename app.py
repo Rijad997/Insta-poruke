@@ -5,62 +5,82 @@ import requests
 
 app = Flask(__name__)
 
-# Podešavanje Geminija
-# NAPOMENA: Ovaj API ključ treba da bude tvoj stvarni ključ iz Google AI Studio
+# --- KONFIGURACIJA ---
+# Tvoj Gemini API ključ
 GENAI_API_KEY = "gen-lang-client-0823125900" 
 genai.configure(api_key=GENAI_API_KEY)
 model = genai.GenerativeModel('gemini-1.5-flash')
 
-# Tvoja tajna reč za Facebook verifikaciju
+# Tvoj Facebook/Instagram Access Token (onaj dugački EAARO...)
+PAGE_ACCESS_TOKEN = "EAAROQVNH2UYBQgEFWFDySL..." 
+
+# Token koji si upisao u Meta Webhook podešavanja
 VERIFY_TOKEN = "samir_ai_2026"
+
+def send_message(recipient_id, text):
+    """Šalje odgovor direktno na Instagram klijentu"""
+    url = f"https://graph.facebook.com/v19.0/me/messages?access_token={PAGE_ACCESS_TOKEN}"
+    payload = {
+        "recipient": {"id": recipient_id},
+        "message": {"text": text}
+    }
+    try:
+        response = requests.post(url, json=payload)
+        return response.json()
+    except Exception as e:
+        print(f"Greška pri slanju poruke: {e}")
+        return None
 
 @app.route('/webhook', methods=['GET'])
 def verify():
-    # Facebook provera pri povezivanju (Webhook Verification)
+    """Verifikacija Webhook-a od strane Facebooka"""
     mode = request.args.get("hub.mode")
     token_sent = request.args.get("hub.verify_token")
     challenge = request.args.get("hub.challenge")
     
     if mode == "subscribe" and token_sent == VERIFY_TOKEN:
-        print("Webhook verifikovan uspešno!")
         return challenge, 200
-    
-    print("Verifikacija neuspešna: Pogrešan token ili mod.")
-    return "Pogresan token", 403
+    return "Pogrešan token", 403
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
-    # Primanje poruka sa Instagrama
+    """Glavna funkcija za primanje i obradu poruka"""
     data = request.json
+    
+    if not data or 'entry' not in data:
+        return "OK", 200
+
     try:
-        if data.get('entry'):
-            for entry in data['entry']:
-                for messaging_event in entry.get('messaging', []):
-                    if messaging_event.get('message'):
-                        sender_id = messaging_event['sender']['id']
-                        user_text = messaging_event['message'].get('text')
+        for entry in data['entry']:
+            for messaging_event in entry.get('messaging', []):
+                # Proveravamo da li je u pitanju tekstualna poruka
+                if 'message' in messaging_event and 'text' in messaging_event['message']:
+                    sender_id = messaging_event['sender']['id']
+                    user_text = messaging_event['message']['text']
 
-                        if user_text:
-                            # Slanje teksta Geminiju
-                            prompt = f"Ti si Samir, direktor prodaje hemijske industrije. Odgovori ljubazno i kratko na: {user_text}"
-                            response = model.generate_content(prompt)
-                            ai_answer = response.text
+                    # POJAČAN PROMPT: Ovde definišemo Samirovu ličnost
+                    prompt = (
+                        f"Ti si Samir, direktor prodaje u hemijskoj industriji Novix Clean. "
+                        f"Tvoj ton je profesionalan, ali ljubazan. Odgovori klijentu na srpskom jeziku. "
+                        f"Klijent kaže: {user_text}"
+                    )
+                    
+                    response = model.generate_content(prompt)
+                    ai_answer = response.text
 
-                            print(f"Klijent ({sender_id}) kaže: {user_text}")
-                            print(f"AI (Samir) kaže: {ai_answer}")
-                            
-                            # OVDE ĆE NAM KASNIJE TREBATI FACEBOOK ACCESS TOKEN ZA SLANJE ODGOVORA
-                            
+                    # Slanje odgovora nazad klijentu
+                    send_message(sender_id, ai_answer)
+                    print(f"Samir je odgovorio korisniku {sender_id}")
+
     except Exception as e:
-        print(f"Greska u obradi poruke: {e}")
+        print(f"Greška u obradi: {e}")
     
     return "OK", 200
 
 @app.route('/')
 def index():
-    return "Server je aktivan i radi!", 200
+    return "Samir AI je online i spreman!", 200
 
 if __name__ == "__main__":
-    # Render koristi port 10000 ili onaj koji on dodeli
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)

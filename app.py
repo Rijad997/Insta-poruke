@@ -1,14 +1,20 @@
 import os
+import requests
 from flask import Flask, request, jsonify
 import google.generativeai as genai
-import requests
 
 app = Flask(__name__)
 
 # --- KONFIGURACIJA ---
-# Tvoj Gemini API ključ
-GENAI_API_KEY = "gen-lang-client-0823125900" 
-genai.configure(api_key=GENAI_API_KEY)
+# Tvoj Meta Token za @novixclean
+PAGE_ACCESS_TOKEN = "IGAAKxrZAhgKG9BZAFpvdDNpb3Itc2xmUW5WZA1E2R2tWWTM1S3EzTmZAWcElZAQnZAQSWlZAVm05TERMc2tfeUNYOTdVbndiTzhJNklkdDVDeUxfbThEdVpab1ZAQQ3d3aDZAiejNQWVRSWHhBSF9mQVllOEVnVWxEUFJZAQzR3SU14eFNJOAZDZD" 
+# Tvoj Verify Token koji si sam smislio (npr. 'mojasecretlozba')
+VERIFY_TOKEN = "samir_ai_2026"
+# Tvoj Google Gemini API ključ
+GEMINI_API_KEY = "AIzaSyDzVTe6Or8WAAnJeJiMOY_gwoEXkNkf6hc"
+
+# Podešavanje AI modela
+genai.configure(api_key=GEMINI_API_KEY)
 model = genai.GenerativeModel('gemini-1.5-flash')
 
 # Tvoj Facebook/Instagram Access Token (onaj dugački EAARO...)

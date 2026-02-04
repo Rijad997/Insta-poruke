@@ -74,7 +74,7 @@ def webhook():
                     )
                     
                     response = model.generate_content(prompt)
-                    ai_answer = response.text
+                    ai_answer = "test: Veza radi!"
 
                     # Slanje odgovora nazad klijentu
                     send_message(sender_id, ai_answer)

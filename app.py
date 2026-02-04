@@ -18,12 +18,21 @@ PAGE_ACCESS_TOKEN = "IGAAKxrZAhgKG9BZAGFHQzN5c3ByNU5kN1c3dTl0Nko5RWJSNjItWjByTFd
 VERIFY_TOKEN = "samir_ai_2026"
 
 def send_message(recipient_id, text):
-    """Šalje odgovor direktno na Instagram klijentu"""
-    url = f"https://graph.facebook.com/v21.0/me/messages?access_token={PAGE_ACCESS_TOKEN}"
+    """Šalje odgovor direktno na Instagram klijentu koristeći v24.0"""
+    # Koristimo v24.0 jer tako stoji na tvom Meta panelu
+    url = f"https://graph.facebook.com/v24.0/me/messages?access_token={PAGE_ACCESS_TOKEN}"
+    
     payload = {
         "recipient": {"id": recipient_id},
         "message": {"text": text}
     }
+    
+    response = requests.post(url, json=payload)
+    
+    if response.status_code == 200:
+        print(f"USPEH: Poruka poslata nalogu {recipient_id}")
+    else:
+        print(f"GREŠKA: {response.status_code} - {response.text}")
     try:
         response = requests.post(url, json=payload)
         return response.json()

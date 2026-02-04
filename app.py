@@ -5,89 +5,81 @@ import google.generativeai as genai
 
 app = Flask(__name__)
 
-# --- JEDINSTVENA KONFIGURACIJA ---
+# --- KONFIGURACIJA (Proveri ove podatke još jednom!) ---
 PAGE_ACCESS_TOKEN = "IGAAKxrZAhgKG9BZAFpvdDNpb3Itc2xmUW5WZA1E2R2tWWTM1S3EzTmZAWcElZAQnZAQSWlZAVm05TERMc2tfeUNYOTdVbndiTzhJNklkdDVDeUxfbThEdVpab1ZAQQ3d3aDZAiejNQWVRSWHhBSF9mQVllOEVnVWxEUFJZAQzR3SU14eFNJOAZDZD"
 VERIFY_TOKEN = "samir_ai_2026"
 GEMINI_API_KEY = "AIzaSyDzVTe6Or8WAAnJeJiMOY_gwoEXkNkf6hc"
 
-# Podešavanje AI modela
+# Podešavanje AI
 genai.configure(api_key=GEMINI_API_KEY)
 model = genai.GenerativeModel('gemini-1.5-flash')
 
-# Nastavak koda (funkcije send_message, webhook...) ostaje isti
 def send_message(recipient_id, text):
-
-    """Šalje odgovor direktno na Instagram klijentu koristeći v24.0"""
-    # Koristimo v24.0 jer tako stoji na tvom Meta panelu
+    """Šalje odgovor i detaljno ispisuje rezultat u logove"""
     url = f"https://graph.facebook.com/v24.0/me/messages?access_token={PAGE_ACCESS_TOKEN}"
-    
     payload = {
         "recipient": {"id": recipient_id},
         "message": {"text": text}
     }
     
-    response = requests.post(url, json=payload)
-    
-    if response.status_code == 200:
-        print(f"USPEH: Poruka poslata nalogu {recipient_id}")
-    else:
-        print(f"GREŠKA: {response.status_code} - {response.text}")
     try:
         response = requests.post(url, json=payload)
-        return response.json()
+        status = response.status_code
+        res_data = response.json()
+        
+        if status == 200:
+            print(f"✅ USPEH: Poruka poslata korisniku {recipient_id}")
+        elif status == 401:
+            print(f"❌ GREŠKA 401: Token je istekao ili je nevažeći! Generiši novi na Meta panelu.")
+        elif status == 403:
+            print(f"❌ GREŠKA 403: Nedostaju dozvole! Proveri 'Allow Access to Messages' na telefonu.")
+        else:
+            print(f"⚠️ STATUS {status}: {res_data}")
+        return res_data
     except Exception as e:
-        print(f"Greška pri slanju poruke: {e}")
+        print(f"🚨 KRITIČNA GREŠKA pri slanju: {e}")
         return None
 
 @app.route('/webhook', methods=['GET'])
 def verify():
-    """Verifikacija Webhook-a od strane Facebooka"""
     mode = request.args.get("hub.mode")
-    token_sent = request.args.get("hub.verify_token")
+    token = request.args.get("hub.verify_token")
     challenge = request.args.get("hub.challenge")
-    
-    if mode == "subscribe" and token_sent == VERIFY_TOKEN:
+    if mode == "subscribe" and token == VERIFY_TOKEN:
         return challenge, 200
-    return "Pogrešan token", 403
+    return "Pogrešan Verify Token", 403
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
-    """Glavna funkcija za primanje i obradu poruka"""
     data = request.json
+    print(f"📩 Nova aktivnost na nalogu!") # Javlja nam da je poruka uopšte stigla
     
-    if not data or 'entry' not in data:
-        return "OK", 200
-
-    try:
+    if data and 'entry' in data:
         for entry in data['entry']:
             for messaging_event in entry.get('messaging', []):
-                # Proveravamo da li je u pitanju tekstualna poruka
                 if 'message' in messaging_event and 'text' in messaging_event['message']:
                     sender_id = messaging_event['sender']['id']
                     user_text = messaging_event['message']['text']
-
-                    # POJAČAN PROMPT: Ovde definišemo Samirovu ličnost
-                    prompt = (
-                        f"Ti si Samir, direktor prodaje u hemijskoj industriji Novix Clean. "
-                        f"Tvoj ton je profesionalan, ali ljubazan. Odgovori klijentu na srpskom jeziku. "
-                        f"Klijent kaže: {user_text}"
-                    )
                     
-                    response = model.generate_content(prompt)
-                    ai_answer = "test: Veza radi!"
+                    print(f"💬 Korisnik kaže: {user_text}")
+                    
+                    try:
+                        # AI Razmišljanje
+                        prompt = f"Ti si Samir, direktor prodaje Novix Clean. Odgovori ljubazno: {user_text}"
+                        ai_response = model.generate_content(prompt)
+                        ai_answer = ai_response.text
+                        
+                        # Slanje
+                        send_message(sender_id, ai_answer)
+                    except Exception as ai_err:
+                        print(f"🚨 Greška u AI modulu: {ai_err}")
+                        send_message(sender_id, "Izvinite, trenutno imam tehničkih poteškoća.")
 
-                    # Slanje odgovora nazad klijentu
-                    send_message(sender_id, ai_answer)
-                    print(f"Samir je odgovorio korisniku {sender_id}")
-
-    except Exception as e:
-        print(f"Greška u obradi: {e}")
-    
     return "OK", 200
 
 @app.route('/')
 def index():
-    return "Samir AI je online i spreman!", 200
+    return "Samir AI Detektiv je online!", 200
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))

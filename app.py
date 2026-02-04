@@ -19,7 +19,7 @@ VERIFY_TOKEN = "samir_ai_2026"
 
 def send_message(recipient_id, text):
     """Šalje odgovor direktno na Instagram klijentu"""
-    url = f"https://graph.facebook.com/v19.0/me/messages?access_token={PAGE_ACCESS_TOKEN}"
+    url = f"https://graph.facebook.com/v21.0/me/messages?access_token={PAGE_ACCESS_TOKEN}"
     payload = {
         "recipient": {"id": recipient_id},
         "message": {"text": text}

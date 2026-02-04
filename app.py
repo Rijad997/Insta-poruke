@@ -12,7 +12,7 @@ genai.configure(api_key=GENAI_API_KEY)
 model = genai.GenerativeModel('gemini-1.5-flash')
 
 # Tvoj Facebook/Instagram Access Token (onaj dugački EAARO...)
-PAGE_ACCESS_TOKEN = "IGAAKxrZAhgKG9BZAGFHQzN5c3ByNU5kN1c3dTl0Nko5RWJSNjItWjByTFdmNFdDSmZAUSGYxLVZAIeFRTdWVmR3AxSjJPRklSMU4wSXBUMXg2REJhRmQ5ZAUxfS0RDLUNjQWRqN3c3cm9Lck9peGNfa2w1RE0wY1B1MzFjcjVETFc1TQZDZD" 
+PAGE_ACCESS_TOKEN = "IGAAKxrZAhgKG9BZAFpvdDNpb3Itc2xmUW5WZA1E2R2tWWTM1S3EzTmZAWcElZAQnZAQSWlZAVm05TERMc2tfeUNYOTdVbndiTzhJNklkdDVDeUxfbThEdVpab1ZAQQ3d3aDZAiejNQWVRSWHhBSF9mQVllOEVnVWxEUFJZAQzR3SU14eFNJOAZDZD" 
 
 # Token koji si upisao u Meta Webhook podešavanja
 VERIFY_TOKEN = "samir_ai_2026"
